@@ -1,0 +1,12 @@
+Version 1.0.0vbeta @ 2022-05-18
+------------------------------------------------------------------------
+Version inicial donde probamos todos los periféricos.
+- Usamos FRTOS 20 que tiene un porte para AVR Dx
+- Debido a que con pruebas previas tuvimos problemas con los 'printf', 
+  usamos el compilador avr-gcc en vez del XC8.
+- La compilacion inicial da un error de ‘CLKCTRL_FREQSEL_24M_gc’ que se 
+  corrije seleccionando el 'propiedades' el DFP versión 1.6.88
+
+- Tenemos el problema que si bien los printf parecen andar bien, no
+  muestra los floats. Solo muestra un '?'
+  
