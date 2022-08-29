@@ -66,6 +66,59 @@ bool USART0_getChar( char *c )
 	return(false);
 }
 // ---------------------------------------------------------------
+void USART3_init(void)
+{
+	// Configuro para 115200
+	
+	PORTB.DIR &= ~PIN1_bm;
+	PORTB.DIR |= PIN0_bm;
+	
+	USART3.BAUD = (uint16_t)USART4_BAUD_RATE(9600);
+	USART3.CTRLB |= USART_RXEN_bm | USART_TXEN_bm;
+}
+// ---------------------------------------------------------------
+void USART3_sendChar(char c)
+{
+	while (!(USART3.STATUS & USART_DREIF_bm))
+	{
+		;
+	}
+	USART3.TXDATAL = c;	
+}
+// ---------------------------------------------------------------
+void USART3_sendString(char *str)
+{
+	for(size_t i = 0; i < strlen(str); i++)
+	{
+		USART3_sendChar(str[i]);
+	}
+}
+// ---------------------------------------------------------------
+char USART3_readChar(bool echo)
+{
+char c;
+
+	while (!(USART3.STATUS & USART_RXCIF_bm))
+	{
+		wdt_reset();
+		;
+	}
+	c = USART3.RXDATAL;
+	if ( echo)
+		USART3_sendChar(c);
+	return(c);
+}
+// ---------------------------------------------------------------
+bool USART3_getChar( char *c )
+{
+
+	if ( USART3.STATUS & USART_RXCIF_bm) {
+		*c = USART3.RXDATAL;
+		return(true);
+	}
+	return(false);
+}
+// ---------------------------------------------------------------
 void USART4_init(void)
 {
 	// Configuro para 115200

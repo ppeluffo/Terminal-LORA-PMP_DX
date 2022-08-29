@@ -8,6 +8,35 @@
 #include "nvm.h"
 
 //------------------------------------------------------------------------------
+uint16_t nvm_read_signature_sum(void)
+{
+nvm_device_serial_id_t avr_id;
+uint16_t signature_sum=0;  
+
+    NVM_ID_read( &avr_id );
+    signature_sum += avr_id.devid0;
+    signature_sum += avr_id.devid1;
+    signature_sum += avr_id.devid2;
+    signature_sum += avr_id.sernum0;
+    signature_sum += avr_id.sernum1;
+    signature_sum += avr_id.sernum2;
+    signature_sum += avr_id.sernum3;
+    signature_sum += avr_id.sernum4;
+    signature_sum += avr_id.sernum5;
+    signature_sum += avr_id.sernum6;
+    signature_sum += avr_id.sernum7;
+    signature_sum += avr_id.sernum8;
+    signature_sum += avr_id.sernum9;
+    signature_sum += avr_id.sernum10;
+    signature_sum += avr_id.sernum11;
+    signature_sum += avr_id.sernum12;
+    signature_sum += avr_id.sernum13;
+    signature_sum += avr_id.sernum14;
+    signature_sum += avr_id.sernum15;
+    
+    return(signature_sum);
+}
+//------------------------------------------------------------------------------
 void nvm_read_print_id(void)
 {
 nvm_device_serial_id_t avr_id;
@@ -20,10 +49,11 @@ nvm_device_serial_id_t avr_id;
     //xprintf_P(PSTR("0x%02x 0x%02x 0x%02x 0x%02x\r\n"), avr_id.sernum12, avr_id.sernum13, avr_id.sernum14, avr_id.sernum15);
 
     xprintf_P(PSTR("AVR_ID: 0x%02x%02x%02x\r\n"), avr_id.devid0, avr_id.devid1, avr_id.devid2);
-    xprintf_P(PSTR("SIGNATURE: %02x%02x%02xx%02x"), avr_id.sernum0, avr_id.sernum1, avr_id.sernum2, avr_id.sernum3);
+    xprintf_P(PSTR("SIGNATURE: %02x%02x%02x%02x"), avr_id.sernum0, avr_id.sernum1, avr_id.sernum2, avr_id.sernum3);
     xprintf_P(PSTR("%02x%02x%02x%02x"), avr_id.sernum4, avr_id.sernum5, avr_id.sernum6, avr_id.sernum7);
     xprintf_P(PSTR("%02x%02x%02x%02x"), avr_id.sernum8, avr_id.sernum9, avr_id.sernum10, avr_id.sernum11);
     xprintf_P(PSTR("%02x%02x%02x%02x\r\n"), avr_id.sernum12, avr_id.sernum13, avr_id.sernum14, avr_id.sernum15);
+    
 }
 //------------------------------------------------------------------------------
 void NVM_ID_read( nvm_device_serial_id_t *avr_id )

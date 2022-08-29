@@ -47,6 +47,7 @@ typedef struct {
 void NVM_ID_read( nvm_device_serial_id_t *avr_id );
 int8_t NVM_EE_write( uint16_t eeWrAddr, char *data, size_t size );
 int8_t NVM_EE_read( uint16_t eeRdAddr, char *data, size_t size );
+uint16_t nvm_read_signature_sum(void);
 
 void nvm_read_print_id(void);
 

@@ -24,6 +24,15 @@ void putch(char c)
 
 }
 //------------------------------------------------------------------------------
+void xputCharNS(unsigned char c)
+{
+
+    stdout_buff[0] = c;
+    stdout_buff[1] = '\0';
+    frtos_write( fdTERM, (char *)stdout_buff, 1 );
+
+}
+//------------------------------------------------------------------------------
 void XPRINTF_init(void)
 {
    // La UART queda abierta con frtos_open()
@@ -131,6 +140,8 @@ int i = 0;
 void xputChar(unsigned char c)
 {
 
+    //USART3_sendChar(c);
+    
     while ( xSemaphoreTake( sem_STDOUT, ( TickType_t ) 5 ) != pdTRUE )
 		vTaskDelay( ( TickType_t)( 5 ) );
    
@@ -139,5 +150,7 @@ void xputChar(unsigned char c)
     frtos_write( fdTERM, (char *)stdout_buff, 1 );
    
     xSemaphoreGive( sem_STDOUT );
+    
+    
 }
 //------------------------------------------------------------------------------

@@ -71,9 +71,10 @@ extern "C" {
 #include "stdbool.h"
 #include "frtos-io.h"
 #include "xprintf.h"
+#include "lora.h"
 
-#define FW_REV "1.0.0 beta"
-#define FW_DATE "@ 20220518"
+#define FW_REV "1.0.3 beta"
+#define FW_DATE "@ 20220828"
 #define HW_MODELO "Terminal Lora PMP FRTOS R001 HW:AVR128DA64"
 #define FRTOS_VERSION "FW:FreeRTOS V202111.00"
 
@@ -81,12 +82,13 @@ extern "C" {
 
 #define tkCtl_TASK_PRIORITY	 	( tskIDLE_PRIORITY + 1 )
 #define tkCmd_TASK_PRIORITY 	( tskIDLE_PRIORITY + 1 )
-#define tkInputs_TASK_PRIORITY 	( tskIDLE_PRIORITY + 1 )
+#define tkLora_TASK_PRIORITY 	( tskIDLE_PRIORITY + 1 )
+#define tkSys_TASK_PRIORITY 	( tskIDLE_PRIORITY + 1 )
 
 #define tkCtl_STACK_SIZE		384
 #define tkCmd_STACK_SIZE		384
-#define tkInputs_STACK_SIZE		384
-
+#define tkLora_STACK_SIZE		384
+#define tkSys_STACK_SIZE		384
 
 StaticTask_t tkCtl_Buffer_Ptr;
 StackType_t tkCtl_Buffer [tkCtl_STACK_SIZE];
@@ -94,18 +96,22 @@ StackType_t tkCtl_Buffer [tkCtl_STACK_SIZE];
 StaticTask_t tkCmd_Buffer_Ptr;
 StackType_t tkCmd_Buffer [tkCmd_STACK_SIZE];
 
-StaticTask_t tkInputs_Buffer_Ptr;
-StackType_t tkInputs_Buffer [tkInputs_STACK_SIZE];
+StaticTask_t tkLora_Buffer_Ptr;
+StackType_t tkLora_Buffer [tkLora_STACK_SIZE];
+
+StaticTask_t tkSys_Buffer_Ptr;
+StackType_t tkSys_Buffer [tkSys_STACK_SIZE];
 
 SemaphoreHandle_t sem_SYSVars;
 StaticSemaphore_t SYSVARS_xMutexBuffer;
 #define MSTOTAKESYSVARSSEMPH ((  TickType_t ) 10 )
 
-TaskHandle_t xHandle_tkCtl, xHandle_tkCmd, xHandle_tkInputs;
+TaskHandle_t xHandle_tkCtl, xHandle_tkCmd, xHandle_tkLora, xHandle_tkSys;
 
 void tkCtl(void * pvParameters);
 void tkCmd(void * pvParameters);
-void tkInputs(void * pvParameters);
+void tkLora(void * pvParameters);
+void tkSys(void * pvParameters);
 
 void reset(void);
 void system_init();
@@ -115,13 +121,8 @@ bool load_config_from_NVM(void);
 uint8_t checksum( uint8_t *s, uint16_t size );
 void kick_wdt( uint8_t bit_pos);
 void config_default(void);
-bool config_modo(char *s_modo);
 bool config_timerpoll(char *s_timerpoll);
-bool config_txwindow(char *s_txwindow);
-bool config_ANoutputChannel(char *s_anOutputChannel);
-bool config_linktimeout(char *s_linkTimeout);
-int xprintf( const char *fmt, ...);
-void xputChar(unsigned char c);
+
 bool save_config_in_NVM(void);
 bool load_config_from_NVM(void);
 
@@ -133,11 +134,7 @@ typedef enum { CENTRAL=0, REMOTO } node_t;
 #define TIMOUT_INACTIVITY_LINK  15
 
 struct {
-    node_t tipo_nodo;                   // (M,S) Indica si es master o slave
     uint16_t timerPoll;                 // (M) Cada cuanto lee la entrada y tx un frame
-    uint16_t tx_window_size;            // (M) Cantidad de frames a transmitir antes de verificar el link
-    uint8_t an_channel_for_convert;     // (S) Canal a convertir en la salida 4-20
-    uint16_t max_inactivity_link;       // (S) Tiempo maximo de inactividad del link
     uint8_t checksum;
 } systemConf;
 

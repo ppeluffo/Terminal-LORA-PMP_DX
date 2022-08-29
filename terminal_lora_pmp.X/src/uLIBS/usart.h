@@ -25,6 +25,12 @@ void USART0_sendString(char *str);
 char USART0_readChar(bool echo);
 bool USART0_getChar( char *c );
 
+void USART3_init(void);
+void USART3_sendChar(char c);
+void USART3_sendString(char *str);
+char USART3_readChar(bool echo);
+bool USART3_getChar( char *c );
+
 void USART4_init(void);
 void USART4_sendChar(char c);
 void USART4_sendString(char *str);

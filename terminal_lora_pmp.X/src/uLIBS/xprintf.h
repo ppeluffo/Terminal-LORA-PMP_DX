@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include "avr/pgmspace.h"
+#include "usart.h"
     
     
 void putch(char c);
@@ -22,7 +23,7 @@ int xprintf_P( PGM_P fmt, ...);
 int xfprintf( int fd, const char *fmt, ...);
 void xputChar(unsigned char c);
 int xputs( const char *str );
-
+void xputCharNS(unsigned char c);
 
 #ifdef	__cplusplus
 }

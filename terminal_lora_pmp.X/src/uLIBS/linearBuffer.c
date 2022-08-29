@@ -9,11 +9,11 @@ void lBchar_CreateStatic ( lBuffer_s *lB, char *storage_area, uint16_t size )
 	lB->size = size;	
 }
 //------------------------------------------------------------------------------
-bool lBchar_Poke( lBuffer_s *lB, char *cChar )
+bool lBchar_Put( lBuffer_s *lB, char *cChar )
 {
     // Guarda un dato en el buffer si hay lugar.
     
-    if(!lBchar_isFull(lB)) {
+    if( ! lBchar_isFull(lB) ) {
         lB->buff[lB->ptr] = *cChar;
 		++lB->ptr;
         return(true);
@@ -21,11 +21,13 @@ bool lBchar_Poke( lBuffer_s *lB, char *cChar )
     return(false);
 }
 //------------------------------------------------------------------------------
-bool lBchar_Pop( lBuffer_s *lB, char *cChar )
+bool lBchar_Get( lBuffer_s *lB, char *cChar )
 {
+    // Lee un dato del buffer a donde apunta el puntero. 
+    
     if ( !lBchar_isEmpty(lB)) {
-        *cChar = lB->buff[lB->ptr];
         --lB->ptr;
+        *cChar = lB->buff[lB->ptr];
         return(true);
     }
     return(false);
@@ -37,8 +39,6 @@ void lBchar_Flush( lBuffer_s *lB )
     
 	lB->ptr = 0;
 	memset( (void *)lB->buff, (int)'y', (size_t)lB->size );
-    //for (i=0; i<lB->size; i++)
-    //    lB->buff[i] = 'p';
 }
 //------------------------------------------------------------------------------
 uint16_t lBchar_GetCount( lBuffer_s *lB )

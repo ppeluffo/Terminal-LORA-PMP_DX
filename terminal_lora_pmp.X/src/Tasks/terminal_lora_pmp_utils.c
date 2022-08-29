@@ -11,6 +11,7 @@
 #include "led.h"
 #include "dac.h"
 #include "nvm.h"
+#include "lora.h"
 
 //------------------------------------------------------------------------------
 int8_t WDT_init(void);
@@ -27,6 +28,7 @@ void system_init()
     XPRINTF_init();
     VREF_init();
     DAC_init();
+    LORA_init();
     
 }
 //-----------------------------------------------------------------------------
@@ -62,15 +64,7 @@ void reset(void)
 //------------------------------------------------------------------------------
 void config_default(void)
 {
-  
-    systemConf.tipo_nodo = CENTRAL;
     systemConf.timerPoll = 60;
-    systemConf.tx_window_size = LINK_WINDOW_SIZE;
-    systemConf.an_channel_for_convert = 0;
-    systemConf.max_inactivity_link = TIMOUT_INACTIVITY_LINK;
-    
-    systemVars.dac = 0;
-    
 }
 //------------------------------------------------------------------------------
 bool save_config_in_NVM(void)
@@ -135,43 +129,9 @@ void kick_wdt( uint8_t bit_pos)
     
 }
 //------------------------------------------------------------------------------
-bool config_modo(char *s_modo)
-{
-    if ( strcmp( strupr( s_modo),"CENTRAL") == 0  ) {
-        systemConf.tipo_nodo = CENTRAL;
-        return(true);
-    }
-
-    if ( strcmp( strupr( s_modo),"REMOTO") == 0  ) {
-        systemConf.tipo_nodo = REMOTO;
-        return(true);
-    }
-    
-    return(false);
-    
-}
-//------------------------------------------------------------------------------
 bool config_timerpoll(char *s_timerpoll)
 {
     systemConf.timerPoll = atoi(s_timerpoll);
     return (true);
-}
-//------------------------------------------------------------------------------
-bool config_txwindow(char *s_txwindow)
-{
-    systemConf.tx_window_size = atoi(s_txwindow);
-    return (true);
-}
-//------------------------------------------------------------------------------
-bool config_ANoutputChannel(char *s_anOutputChannel)
-{
-    systemConf.an_channel_for_convert = atoi(s_anOutputChannel);
-    return (true);
-}
-//------------------------------------------------------------------------------
-bool config_linktimeout(char *s_linkTimeout)
-{
-    systemConf.max_inactivity_link = atoi(s_linkTimeout);
-    return(true);
 }
 //------------------------------------------------------------------------------

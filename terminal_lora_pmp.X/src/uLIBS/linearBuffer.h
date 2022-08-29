@@ -34,8 +34,8 @@ typedef struct struct_lBuffer
 } lBuffer_s;
 
 void lBchar_CreateStatic ( lBuffer_s *lB, char *storage_area, uint16_t size  );
-bool lBchar_Poke( lBuffer_s *lB, char *cChar );
-bool lBchar_Pop( lBuffer_s *lB, char *cChar );
+bool lBchar_Put( lBuffer_s *lB, char *cChar );
+bool lBchar_Get( lBuffer_s *lB, char *cChar );
 void lBchar_Flush( lBuffer_s *lB );
 uint16_t lBchar_GetCount( lBuffer_s *lB );
 uint16_t lBchar_GetFreeCount( lBuffer_s *lB );

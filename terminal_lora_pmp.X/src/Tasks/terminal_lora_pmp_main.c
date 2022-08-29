@@ -139,9 +139,6 @@ FUSES = {
 LOCKBITS = 0x5CC5C55C; // {KEY=NOLOCK}
 
 
-
-
-
 //------------------------------------------------------------------------------
 int main(void) {
 
@@ -152,10 +149,12 @@ int main(void) {
     frtos_open(fdNVM, 0 );
     
     sem_SYSVars = xSemaphoreCreateMutexStatic( &SYSVARS_xMutexBuffer );
+    sem_LORA = xSemaphoreCreateMutexStatic( &LORA_xMutexBuffer );
     
     xHandle_tkCtl = xTaskCreateStatic( tkCtl, "CTL", tkCtl_STACK_SIZE, (void *)1, tkCtl_TASK_PRIORITY, tkCtl_Buffer, &tkCtl_Buffer_Ptr );
     xHandle_tkCmd = xTaskCreateStatic( tkCmd, "CMD", tkCmd_STACK_SIZE, (void *)1, tkCmd_TASK_PRIORITY, tkCmd_Buffer, &tkCmd_Buffer_Ptr );
-    //xHandle_tkDac = xTaskCreateStatic( tkDac, "DAC", tkDac_STACK_SIZE, (void *)1, tkDac_TASK_PRIORITY, tkDac_Buffer, &tkDac_Buffer_Ptr );
+    xHandle_tkLora = xTaskCreateStatic( tkLora, "LORA", tkLora_STACK_SIZE, (void *)1, tkLora_TASK_PRIORITY, tkLora_Buffer, &tkLora_Buffer_Ptr );
+    xHandle_tkSys = xTaskCreateStatic( tkSys, "SYS", tkSys_STACK_SIZE, (void *)1, tkSys_TASK_PRIORITY, tkSys_Buffer, &tkSys_Buffer_Ptr );
 
     
     /* Arranco el RTOS. */
