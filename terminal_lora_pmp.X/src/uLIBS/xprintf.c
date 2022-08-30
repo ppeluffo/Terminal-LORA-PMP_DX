@@ -141,6 +141,7 @@ void xputChar(unsigned char c)
 {
 
     //USART3_sendChar(c);
+    //return;
     
     while ( xSemaphoreTake( sem_STDOUT, ( TickType_t ) 5 ) != pdTRUE )
 		vTaskDelay( ( TickType_t)( 5 ) );

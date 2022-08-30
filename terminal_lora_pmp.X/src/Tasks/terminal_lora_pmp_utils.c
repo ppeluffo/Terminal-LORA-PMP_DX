@@ -65,6 +65,17 @@ void reset(void)
 void config_default(void)
 {
     systemConf.timerPoll = 60;
+    systemConf.debug_lora_comms = false;
+    
+    systemConf.lora_pwrOut = 14;
+    systemConf.lora_spreadFactor = sf12;
+    systemConf.lora_bw = 125;
+    
+    systemConf.tipo_dispositivo = tanque;
+    
+    systemConf.lora_rxslot_width = 7000;
+    systemConf.lora_rxslot_spread = 6000;
+    
 }
 //------------------------------------------------------------------------------
 bool save_config_in_NVM(void)
@@ -135,3 +146,101 @@ bool config_timerpoll(char *s_timerpoll)
     return (true);
 }
 //------------------------------------------------------------------------------
+bool config_pwrOut(char *s_pwrOut)
+{
+    
+int8_t pwrOut;
+    
+    pwrOut = atoi(s_pwrOut);
+    if ( (pwrOut < 2) || (pwrOut > 20) ) {
+        return (false);
+    }
+    if ( (pwrOut == 18) || (pwrOut == 19) ) {
+        return (false);
+    }
+    systemConf.lora_pwrOut = pwrOut;
+    return (true);
+    
+}
+//------------------------------------------------------------------------------
+bool config_bandWidth(char *s_bandWidth)
+{
+    
+int16_t bandWidth;
+    
+    bandWidth = atoi(s_bandWidth);   
+    if ( (bandWidth == 125) || (bandWidth == 250) || ( bandWidth == 500)) {
+        systemConf.lora_bw = bandWidth;
+        return (true);
+    }
+        
+    return (false);
+    
+}
+//------------------------------------------------------------------------------
+bool config_spreadFactor(char *s_spreadFactor)
+{
+    
+    if ( strcmp( strupr(s_spreadFactor),"SF7") == 0 ) {
+        systemConf.lora_spreadFactor = sf7;
+        return(true);
+    } else if ( strcmp( strupr(s_spreadFactor),"SF8") == 0 ) {
+        systemConf.lora_spreadFactor = sf8;
+        return(true);
+    } else if ( strcmp( strupr(s_spreadFactor),"SF9") == 0 ) {
+        systemConf.lora_spreadFactor = sf9;
+        return(true);
+    } else if ( strcmp( strupr(s_spreadFactor),"SF10") == 0 ) {
+        systemConf.lora_spreadFactor = sf10;
+        return(true);
+    } else if ( strcmp( strupr(s_spreadFactor),"SF11") == 0 ) {
+        systemConf.lora_spreadFactor = sf11;
+        return(true);
+    } else if ( strcmp( strupr(s_spreadFactor),"SF12") == 0 ) {
+        systemConf.lora_spreadFactor = sf12;
+        return(true);
+    }
+
+    return (false);
+    
+}
+//------------------------------------------------------------------------------
+bool config_tipoDispositivo(char *s_tipoDispositivo)
+{
+    
+    if ( strcmp( strupr(s_tipoDispositivo),"TANQUE") == 0 ) {
+        systemConf.tipo_dispositivo = tanque;
+        return(true);
+    } else if ( strcmp( strupr(s_tipoDispositivo),"PERFORACION") == 0 ) {
+        systemConf.tipo_dispositivo = perforacion;
+        return(true);
+    } 
+
+    return (false);
+    
+}
+//------------------------------------------------------------------------------
+bool config_rxslotWidth(char *s_rxslotWidth)
+{
+    systemConf.lora_rxslot_width = atoi(s_rxslotWidth);
+    return (true);
+}
+//------------------------------------------------------------------------------
+bool config_rxslotSpread(char *s_rxslotSpread)
+{
+    systemConf.lora_rxslot_spread = atoi(s_rxslotSpread);
+    return (true);
+}
+//------------------------------------------------------------------------------
+
+void test_debug(void)
+{
+    
+    lBchar_CreateStatic(&lora_tx_sdata, &lora_tx_buffer[0], LORA_TX_BUFFER_SIZE );
+    lBchar_Flush(&lora_tx_sdata);
+    sprintf( lBchar_get_buffer(&lora_tx_sdata), "mac pause" );
+    xfprintf( fdTERM, "[%s]\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    
+    
+}

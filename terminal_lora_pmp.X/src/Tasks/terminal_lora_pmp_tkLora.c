@@ -24,10 +24,12 @@ uint8_t c = 0;
 
 	vTaskDelay( ( TickType_t)( 300 / portTICK_PERIOD_MS ) );
    
-	xprintf( "Starting tkLora..\r\n" );
+    xprintf( "Starting tkLora..\r\n" );
     lora_reset_on();
-    lora_flush_RxBuffer();
     
+    lBchar_Flush(&lora_rx_sdata);
+    
+   
 	// loop
 	for( ;; )
 	{
@@ -49,30 +51,39 @@ void LORA_process( uint8_t c)
      * 
      */
     
+char *p;
+    
     if ( c=='\r') {
         
+        p = lBchar_get_buffer(&lora_rx_sdata);
+        
         // Respuesta del transceiver
-        if ( strstr( lora_rx_data.buffer, "radio_rx") != NULL ) {
+        if ( strstr( p, "radio_rx") != NULL ) {
             radio_responses.rsp_radio_rx = true;
-        } else if ( strstr( lora_rx_data.buffer, "radio_tx_ok") != NULL ) {      
+        } else if ( strstr( p, "radio_tx_ok") != NULL ) {      
             radio_responses.rsp_radio_tx_ok = true;
-        } else if ( strstr( lora_rx_data.buffer, "radio_err") != NULL ) {          
+        } else if ( strstr( p, "radio_err") != NULL ) {          
             radio_responses.rsp_radio_err = true;
         }
         
         // Respuesta al comando
-        if ( strstr( lora_rx_data.buffer, "ok") != NULL ) {
+        if ( strstr( p, "ok") != NULL ) {
             radio_responses.rsp_ok = true;
-        } else if ( strstr( lora_rx_data.buffer, "invalid_params") != NULL ) {      
+        } else if ( strstr( p, "invalid_params") != NULL ) {      
             radio_responses.rsp_invalid_params = true;
-        } else if ( strstr( lora_rx_data.buffer, "busy") != NULL ) {          
+        } else if ( strstr( p, "busy") != NULL ) {          
             radio_responses.rsp_busy = true;
         }
         
     } 
-    
-    lora_push_RxBuffer(c);
-    xputChar(c);
+
+    if ( ! lBchar_Put( &lora_rx_sdata, c ) ) {
+        xprintf_P(PSTR("ERROR puchar Lora\r\n"));
+    }
+
+    if (systemConf.debug_lora_comms)
+        xputChar(c);
+
     return;
  
 }

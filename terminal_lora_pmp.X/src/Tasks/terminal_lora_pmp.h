@@ -73,8 +73,8 @@ extern "C" {
 #include "xprintf.h"
 #include "lora.h"
 
-#define FW_REV "1.0.3 beta"
-#define FW_DATE "@ 20220828"
+#define FW_REV "1.0.4 beta"
+#define FW_DATE "@ 20220830"
 #define HW_MODELO "Terminal Lora PMP FRTOS R001 HW:AVR128DA64"
 #define FRTOS_VERSION "FW:FreeRTOS V202111.00"
 
@@ -108,6 +108,8 @@ StaticSemaphore_t SYSVARS_xMutexBuffer;
 
 TaskHandle_t xHandle_tkCtl, xHandle_tkCmd, xHandle_tkLora, xHandle_tkSys;
 
+void test_debug(void);
+
 void tkCtl(void * pvParameters);
 void tkCmd(void * pvParameters);
 void tkLora(void * pvParameters);
@@ -122,6 +124,12 @@ uint8_t checksum( uint8_t *s, uint16_t size );
 void kick_wdt( uint8_t bit_pos);
 void config_default(void);
 bool config_timerpoll(char *s_timerpoll);
+bool config_pwrOut(char *s_pwrOut);
+bool config_bandWidth(char *s_bandWidth);
+bool config_spreadFactor(char *s_spreadFactor);
+bool config_tipoDispositivo(char *s_tipoDispositivo);
+bool config_rxslotWidth(char *s_rxslotWidth);
+bool config_rxslotSpread(char *s_rxslotSpread);
 
 bool save_config_in_NVM(void);
 bool load_config_from_NVM(void);
@@ -133,8 +141,21 @@ typedef enum { CENTRAL=0, REMOTO } node_t;
 #define LINK_WINDOW_SIZE        10
 #define TIMOUT_INACTIVITY_LINK  15
 
+typedef enum { sf7 = 0, sf8, sf9, sf10, sf11,  sf12 } lora_spread_factor_t;
+typedef enum { tanque = 0, perforacion } tipo_dispositivo_t;
+
 struct {
     uint16_t timerPoll;                 // (M) Cada cuanto lee la entrada y tx un frame
+    bool debug_lora_comms;
+    tipo_dispositivo_t tipo_dispositivo;
+    //
+    uint8_t lora_pwrOut;
+    lora_spread_factor_t lora_spreadFactor;
+    uint16_t lora_bw;
+    //
+    uint16_t lora_rxslot_width;
+    uint16_t lora_rxslot_spread;
+    //
     uint8_t checksum;
 } systemConf;
 
@@ -142,6 +163,8 @@ struct {
     uint16_t dac;
     uint16_t link_timeout;          // (S) Tiempo en secs sin actividad
     uint16_t txmited_frames;        // (M) Cantidad de frames transmitidos
+    int16_t lora_snr;
+    
 } systemVars;
 
 

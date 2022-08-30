@@ -16,6 +16,7 @@ states_t lora_state;
 
 void pv_INIT_state(void);
 void pv_LISTEN_state(void);
+void pv_TXMIT_state(void);
 void pv_ERROR_state(void);
 //------------------------------------------------------------------------------
 void tkSys(void * pvParameters)
@@ -40,7 +41,7 @@ uint16_t seed;
 	// loop
 	for( ;; )
 	{
-        vTaskDelay( ( TickType_t)( 10 / portTICK_PERIOD_MS ) );
+        vTaskDelay( ( TickType_t)( 100 / portTICK_PERIOD_MS ) );
         
         switch (lora_state) {
             case INIT_ST:
@@ -109,32 +110,34 @@ void pv_LISTEN_state(void)
         
 TickType_t slot_time;
 float rs;
-
     
     // Calculo la duracion ( aleatoria ) del slot.
     // Genero un numero aleatorio entre 0 y 6000 
-    rs = (6000.0 * rand() ) / RAND_MAX;
+    rs = (1.0 * systemConf.lora_rxslot_spread * rand() ) / RAND_MAX;
     // Calculo el tiempo de duracion del slot que va entre 17000 y 23000 ms
-    slot_time = 17000 + (int)rs;
+    slot_time = systemConf.lora_rxslot_width + (int)rs;
     
-    xprintf_P(PSTR("DEBUG: IN Listen_state %d ms\r\n"), slot_time );
+    //xprintf_P(PSTR("DEBUG: IN Listen_state %d ms\r\n"), slot_time );
     
     // Espero el semaforo para capturar el radio
 	while ( xSemaphoreTake( sem_LORA, ( TickType_t ) 5 ) != pdTRUE )
 		vTaskDelay( ( TickType_t)( 10 ) );
     
     // Paso a modo Listen
-    lora_flush_TxBuffer();
-    lora_flush_RxBuffer();
+    lBchar_Flush(&lora_tx_sdata);
+    lBchar_Flush(&lora_rx_sdata);
     lora_responses_clear();
-    sprintf(lora_tx_data.buffer, "radio rx %d", slot_time );
-    //strncpy(lora_tx_data.buffer, "radio rx 30000", LORA_TX_BUFFER_SIZE);
-    //xfprintf( fdTERM, "[%s]\r\n", &lora_tx_data.buffer[0] );
-    xfprintf( fdLORA, "%s\r\n", &lora_tx_data.buffer[0] );
+    
+    sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio rx %d", slot_time );
+    if (systemConf.debug_lora_comms) {
+        xfprintf( fdTERM, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    }
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
     vTaskDelay( ( TickType_t)( 50 / portTICK_PERIOD_MS ) );
     
     // Monitoreo respuestas
     while(1) {
+        
         // Respuesta ok al comando: no hago nada
         if ( radio_responses.rsp_ok ) {
             ;
@@ -145,28 +148,30 @@ float rs;
         }
         // Error: debo dar de nuevo el comando. Espero 5s.
         if ( radio_responses.rsp_busy ) {
-            vTaskDelay( ( TickType_t)( 5000 / portTICK_PERIOD_MS ) );
+            //vTaskDelay( ( TickType_t)( 5000 / portTICK_PERIOD_MS ) );
             break;
         }
             
         // Error del transceiver: Puede ser porque expiro el timeout
         if ( radio_responses.rsp_radio_err ) {
-            //vTaskDelay( ( TickType_t)( 5000 / portTICK_PERIOD_MS ) );
             break;
         }
             
         // OK. Recibi un mensaje del remoto. Salgo a procesarlo
         if ( radio_responses.rsp_radio_rx ) {
-            lora_print_RxBuffer();
+            //lBchar_print(&lora_rx_sdata);
+            //lora_print_rxvd_msg();
             lora_decode_msg();
+            lora_read_snr();
+            lora_send_confirmation();
             break;      
         } 
             
-        vTaskDelay( ( TickType_t)( 50 / portTICK_PERIOD_MS ) );
+        vTaskDelay( ( TickType_t)( 100 / portTICK_PERIOD_MS ) );
        
     }
     
-    xprintf_P(PSTR("DEBUG: OUT Listen_state\r\n"));  
+    //xprintf_P(PSTR("DEBUG: OUT Listen_state\r\n"));  
     lora_state = TXMIT_ST;
     return;
 
@@ -179,31 +184,81 @@ void pv_INIT_state(void)
      * No controlo las respuestas !!!
      */
     
-    xprintf_P(PSTR("DEBUG: IN Init_state\r\n"));
+    //xprintf_P(PSTR("DEBUG: IN Init_state\r\n"));
+    xprintf_P(PSTR("LORA: Init...\r\n"));
 
+    //lora_reset_off();
+    //vTaskDelay( ( TickType_t)( 2000 / portTICK_PERIOD_MS ) );
+    //lora_reset_on();
+    
     // Apagamos el lorawan
-    lora_flush_TxBuffer();
-    strncpy(lora_tx_data.buffer, "mac pause", LORA_TX_BUFFER_SIZE);
-    xfprintf( fdTERM, "[%s]\r\n", &lora_tx_data.buffer[0] );
-    xfprintf( fdLORA, "%s\r\n", &lora_tx_data.buffer[0] );
+    lBchar_Flush(&lora_tx_sdata);
+    sprintf( lBchar_get_buffer(&lora_tx_sdata), "mac pause" );
+    xfprintf( fdTERM, "[%s]\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
     vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
     //
     // Modulamos en fsk
-    lora_flush_TxBuffer();
-    strncpy(lora_tx_data.buffer, "radio set mod fsk", LORA_TX_BUFFER_SIZE);
-    xfprintf( fdTERM, "[%s]\r\n", &lora_tx_data.buffer[0] );
-    xfprintf( fdLORA, "%s\r\n", &lora_tx_data.buffer[0] );
+    lBchar_Flush(&lora_tx_sdata);
+    sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set mod fsk" );
+    xfprintf( fdTERM, "[%s]\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
     vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
     //
     // El tiempo de monitoreo es de 1 min.
-    lora_flush_TxBuffer();
-    strncpy(lora_tx_data.buffer, "radio set wdt 60000", LORA_TX_BUFFER_SIZE);
-    xfprintf( fdTERM, "[%s]\r\n", &lora_tx_data.buffer[0] );
-    xfprintf( fdLORA, "%s\r\n", &lora_tx_data.buffer[0] );
+    lBchar_Flush(&lora_tx_sdata);
+    sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set wdt 60000" );
+    xfprintf( fdTERM, "[%s]\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
+    //
+    // Potencia de transmision
+    lBchar_Flush(&lora_tx_sdata);
+    sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set pwr %d", systemConf.lora_pwrOut );
+    xfprintf( fdTERM, "[%s]\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
+    // 
+    // Bandwidth
+    lBchar_Flush(&lora_tx_sdata);
+    sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set bw %d", systemConf.lora_bw );
+    xfprintf( fdTERM, "[%s]\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
+     // 
+    // SpreadFacotor
+    lBchar_Flush(&lora_tx_sdata);
+    switch( systemConf.lora_spreadFactor ) {
+        case  sf7:
+            sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set sf sf7");
+            break;
+        case sf8:
+            sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set sf sf8");
+            break;
+        case sf9:
+            sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set sf sf9");
+            break;
+        case sf10:
+            sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set sf sf10");
+            break;
+        case sf11:
+            sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set sf sf11");
+            break;
+        case sf12:
+            sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set sf sf12");
+            break;
+        default:
+            sprintf( lBchar_get_buffer(&lora_tx_sdata), "radio set sf sf12");
+            break;
+    }
+    //
+    xfprintf( fdTERM, "[%s]\r\n", lBchar_get_buffer(&lora_tx_sdata) );
+    xfprintf( fdLORA, "%s\r\n", lBchar_get_buffer(&lora_tx_sdata) );
     vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
     
     lora_state = LISTEN_ST;
-    xprintf_P(PSTR("DEBUG: OUT Init_state\r\n"));
+    //xprintf_P(PSTR("DEBUG: OUT Init_state\r\n"));
+    xprintf_P(PSTR("LORA: Listening...\r\n"));
     return;
 
 }

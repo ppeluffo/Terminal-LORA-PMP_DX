@@ -22,6 +22,7 @@ extern "C" {
 #include "xprintf.h"    
 #include "stdbool.h"
 #include <stdio.h>
+#include "linearBuffer.h"
 
     
 #define LORA_RTS_PORT	PORTE
@@ -55,27 +56,26 @@ uint8_t lora_read_rts(void);
 #define lora_reset_off()    CLEAR_LORA_RESET()
 
 
+#define LORA_RX_DECODED_BUFFER_SIZE 128
+
+
+lBuffer_s lora_rx_sdata;
 #define LORA_RX_BUFFER_SIZE 128
+char lora_rx_buffer[LORA_RX_BUFFER_SIZE];
+
+
+lBuffer_s lora_tx_sdata;
 #define LORA_TX_BUFFER_SIZE 128
+char lora_tx_buffer[LORA_TX_BUFFER_SIZE];
+
+lBuffer_s lora_decoded_rx_sdata;
+#define LORA_DECODED_RX_BUFFER_SIZE 64
+char lora_decoded_rx_buffer[LORA_DECODED_RX_BUFFER_SIZE];
 
 SemaphoreHandle_t sem_LORA;
 StaticSemaphore_t LORA_xMutexBuffer;
 #define MSTOTAKELORASEMPH ((  TickType_t ) 10 )
 
-struct {
-    uint8_t ptr;
-    char buffer[LORA_RX_BUFFER_SIZE];
-} lora_rx_data;
-
-struct {
-    uint8_t ptr;
-    char buffer[LORA_TX_BUFFER_SIZE];
-} lora_tx_data;
-
-struct {
-    uint8_t ptr;
-    char buffer[LORA_TX_BUFFER_SIZE];
-} lora_rx_decoded_data;
 
 struct {
     bool rsp_ok;
@@ -89,16 +89,15 @@ struct {
 
 void LORA_init(void);
 void lora_flash_led(void);
-void lora_flush_RxBuffer(void);
-void lora_print_RxBuffer(void);
-void lora_push_RxBuffer( uint8_t c);
-void lora_print_RxBuffer_stats(void);
 bool lora_send_msg_in_ascii(char *msg);
-void lora_flush_TxBuffer(void);
-void lora_cmd(char **argv );
+void lora_send_cmd(char **argv );
 void lora_responses_clear(void);
 void lora_responses_print(void);
 void lora_decode_msg(void);
+void lora_print_rxvd_msg(void);
+void lora_read_snr(void);
+void lora_send_confirmation(void);
+
 
 #ifdef	__cplusplus
 }

@@ -142,6 +142,8 @@ LOCKBITS = 0x5CC5C55C; // {KEY=NOLOCK}
 //------------------------------------------------------------------------------
 int main(void) {
 
+    //test_debug();
+    
     system_init();
     frtos_open(fdTERM, 9600 );
     frtos_open(fdLORA, 57600 );

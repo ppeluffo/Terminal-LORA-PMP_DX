@@ -22,6 +22,7 @@ extern "C" {
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "xprintf.h"
     
     
 //--------------------------------------------------------------------------------------------
@@ -34,7 +35,7 @@ typedef struct struct_lBuffer
 } lBuffer_s;
 
 void lBchar_CreateStatic ( lBuffer_s *lB, char *storage_area, uint16_t size  );
-bool lBchar_Put( lBuffer_s *lB, char *cChar );
+bool lBchar_Put( lBuffer_s *lB, char cChar );
 bool lBchar_Get( lBuffer_s *lB, char *cChar );
 void lBchar_Flush( lBuffer_s *lB );
 uint16_t lBchar_GetCount( lBuffer_s *lB );
@@ -42,6 +43,8 @@ uint16_t lBchar_GetFreeCount( lBuffer_s *lB );
 bool lBchar_isFull( lBuffer_s *lB );
 bool lBchar_isEmpty( lBuffer_s *lB );
 char *lBchar_get_buffer(lBuffer_s *lB);
+void lBchar_print(lBuffer_s *lB );
+
 
 #ifdef	__cplusplus
 }

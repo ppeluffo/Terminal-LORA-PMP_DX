@@ -20,6 +20,8 @@ static void cmdLoraFunction(void);
 static void pv_snprintfP_OK(void );
 static void pv_snprintfP_ERR(void );
 
+bool cmd_config_lora(void);
+
 //------------------------------------------------------------------------------
 void tkCmd(void * pvParameters)
 {
@@ -67,17 +69,17 @@ static void cmdLoraFunction(void)
    
         
     if ( strcmp( strupr(argv[1]),"SYS") == 0 ) {
-        lora_cmd(argv);
+        lora_send_cmd(argv);
         return;
     }
 
     if ( strcmp( strupr(argv[1]),"MAC") == 0 ) {
-        lora_cmd(argv);
+        lora_send_cmd(argv);
         return;
     }
 
     if ( strcmp( strupr(argv[1]),"RADIO") == 0 ) {
-        lora_cmd(argv);
+        lora_send_cmd(argv);
         return;
     }
     
@@ -124,12 +126,12 @@ static void cmdLoraFunction(void)
     }
     
     if ( strcmp( strupr(argv[1]),"FLUSHRX") == 0 ) {
-        lora_flush_RxBuffer();
+        lBchar_Flush(&lora_rx_sdata);
         return;
     }
     
     if ( strcmp( strupr(argv[1]),"PRINTRX") == 0 ) {
-        lora_print_RxBuffer();
+        lBchar_print(&lora_rx_sdata);
         return;
     }
     
@@ -162,7 +164,13 @@ static void cmdHelpFunction(void)
     }  else if ( strcmp( strupr(argv[1]), "CONFIG") == 0 ) {
 		xprintf_P(PSTR("-config:\r\n"));
 		xprintf_P(PSTR("   default,save,load\r\n"));
+        xprintf_P(PSTR("   tipo {tanque,perforacion}\r\n"));
         xprintf_P(PSTR("   timerpoll\r\n"));
+        xprintf_P(PSTR("   lora comms {on,off}\r\n"));
+        xprintf_P(PSTR("   lora pwr {2..20}\r\n"));
+        xprintf_P(PSTR("   lora bandwidth {125,250,500}\r\n"));
+        xprintf_P(PSTR("   lora spreadfactor {sf7,sf8,sf9,sf10,sf11,sf12}\r\n"));
+        xprintf_P(PSTR("   lora slotwidth, slotspread\r\n"));
 
     }  else if ( strcmp( strupr(argv[1]), "READ") == 0 ) {
 		xprintf("-read:\r\n");
@@ -206,7 +214,43 @@ static void cmdStatusFunction(void)
     xprintf("Spymovil %s %s %s %s \r\n" , HW_MODELO, FRTOS_VERSION, FW_REV, FW_DATE);
     
     xprintf_P(PSTR("Configuracion:\r\n"));
+    switch ( systemConf.tipo_dispositivo) {
+        case tanque:
+            xprintf_P(PSTR(" tipo: TANQUE\r\n"));
+            break;
+        case perforacion:
+            xprintf_P(PSTR(" tipo: PERFORACION\r\n"));
+            break;       
+    }
     xprintf_P(PSTR(" TimerPoll: %d(s)\r\n"), systemConf.timerPoll);
+    xprintf_P(PSTR(" lora pwrout: %d\r\n"), systemConf.lora_pwrOut);
+    xprintf_P(PSTR(" lora bandwidth: %d(khz)\r\n"), systemConf.lora_bw);
+    xprintf_P(PSTR(" lora spreadfactor:"));
+    switch(systemConf.lora_spreadFactor) {
+        case sf7:
+            xprintf_P(PSTR(" sf7\r\n"));
+            break;
+        case sf8:
+            xprintf_P(PSTR(" sf8\r\n"));
+            break;            
+         case sf9:
+            xprintf_P(PSTR(" sf9\r\n"));
+            break;    
+         case sf10:
+            xprintf_P(PSTR(" sf10\r\n"));
+            break;   
+         case sf11:
+            xprintf_P(PSTR(" sf11\r\n"));
+            break;           
+         case sf12:
+            xprintf_P(PSTR(" sf12\r\n"));
+            break;           
+    }
+    xprintf_P(PSTR(" lora slot width: %d(ms)\r\n"), systemConf.lora_rxslot_width);
+    xprintf_P(PSTR(" lora slot spread: %d(ms)\r\n"), systemConf.lora_rxslot_spread);  
+    xprintf_P(PSTR(" lora snr: %d\r\n"), systemVars.lora_snr);
+    //
+    xprintf_P(PSTR(" last rcvdFrame: [%s]\r\n"), lBchar_get_buffer(&lora_decoded_rx_sdata));
 }
 //------------------------------------------------------------------------------
 static void cmdWriteFunction(void)
@@ -270,7 +314,19 @@ static void cmdConfigFunction(void)
 {
   
     FRTOS_CMD_makeArgv();
-          
+
+    //tipo
+	if ( strcmp( strupr(argv[1]),"TIPO") == 0  ) {
+        config_tipoDispositivo(argv[2]) ? pv_snprintfP_OK() : pv_snprintfP_ERR();
+        return;
+    }
+    
+    //lora
+	if ( strcmp( strupr(argv[1]),"LORA") == 0  ) {
+        cmd_config_lora() ? pv_snprintfP_OK() : pv_snprintfP_ERR();
+        return;
+    }
+    
     //timerpoll
 	if ( strcmp( strupr(argv[1]),"TIMERPOLL") == 0  ) {
         config_timerpoll(argv[2]) ? pv_snprintfP_OK() : pv_snprintfP_ERR();
@@ -312,4 +368,49 @@ static void pv_snprintfP_ERR(void)
 	xprintf("ERROR\r\n\0");
 }
 //------------------------------------------------------------------------------
+bool cmd_config_lora(void)
+{
+    
+    if ( strcmp( strupr(argv[2]),"COMMS") == 0  ) {
+        if ( strcmp( strupr(argv[3]),"ON") == 0  ) {
+            systemConf.debug_lora_comms = true;
+            return(true);
+        }
+        if ( strcmp( strupr(argv[3]),"OFF") == 0  ) {
+            systemConf.debug_lora_comms = false;
+            return(true);        
+        }
+        return(false);
+	}
+    
+    // lora pwr {2..20}
+    if ( strcmp( strupr(argv[2]),"PWR") == 0  ) {
+        return( config_pwrOut( argv[3]));
+    }
+    
+    // lora bandwidth {125,250,500}
+    if ( strcmp( strupr(argv[2]),"BANDWIDTH") == 0  ) {
+        return( config_bandWidth( argv[3]));
+    }    
+    
+    // lora spreadfactor {sf7,sf8,sf9,sf10,sf11,sf12}
+    if ( strcmp( strupr(argv[2]),"SPREADFACTOR") == 0  ) {
+        return( config_spreadFactor( argv[3]));
+    }     
+    
+    // lora slotwidth
+    if ( strcmp( strupr(argv[2]),"SLOTWIDTH") == 0  ) {
+        return( config_rxslotWidth( argv[3]));
+    }
 
+    // lora slotspread
+    if ( strcmp( strupr(argv[2]),"SLOTSPREAD") == 0  ) {
+        return( config_rxslotSpread( argv[3]));
+    }
+   
+            
+    return(false);
+    
+   
+}
+//------------------------------------------------------------------------------
